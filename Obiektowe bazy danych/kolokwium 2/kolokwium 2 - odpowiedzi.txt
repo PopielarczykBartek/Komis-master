@@ -1,0 +1,229 @@
+CREATE TABLE PRZEDMIOTY
+(
+id_przedmiotu number,
+nazwa varchar2(128)
+);
+
+CREATE TABLE OCENY
+(
+    id_oceny number,
+    id_przedmiotu number,
+    id_ucznia number,
+    id_nauczyciela number,
+    ocena number,
+    data date
+);
+
+CREATE TABLE NAUCZYCIELE
+(
+id_nauczyciela number,
+nazwisko varchar2(128),
+imie varchar2(128),
+id_przedmiotu number
+);
+
+CREATE TABLE UCZNIOWIE
+(
+id_ucznia number,
+nazwisko varchar2(128),
+imie varchar2(128),
+data_ur date,
+id_klasy number
+);
+
+CREATE TABLE KLASY
+(
+id_klasy number,
+nazwa varchar2(128),
+id_nauczyciela number
+);
+
+
+INSERT INTO PRZEDMIOTY(id_przedmiotu,nazwa)
+VALUES(1,'Matematyka');
+INSERT INTO PRZEDMIOTY(id_przedmiotu,nazwa)
+VALUES(2,'Angielski');
+INSERT INTO PRZEDMIOTY(id_przedmiotu,nazwa)
+VALUES(3,'Polski');
+INSERT INTO PRZEDMIOTY(id_przedmiotu,nazwa)
+VALUES(4,'Biologia');
+
+INSERT INTO OCENY(id_oceny,id_przedmiotu,id_ucznia,id_nauczyciela,ocena,data)
+VALUES(1,1,1,1,4.0,'2018-01-10');
+INSERT INTO OCENY(id_oceny,id_przedmiotu,id_ucznia,id_nauczyciela,ocena,data)
+VALUES(2,2,1,2,3.5,'2018-01-08');
+INSERT INTO OCENY(id_oceny,id_przedmiotu,id_ucznia,id_nauczyciela,ocena,data)
+VALUES(3,3,1,3,3.0,'2018-01-02');
+INSERT INTO OCENY(id_oceny,id_przedmiotu,id_ucznia,id_nauczyciela,ocena,data)
+VALUES(4,4,1,4,5.0,'2018-01-14');
+INSERT INTO OCENY(id_oceny,id_przedmiotu,id_ucznia,id_nauczyciela,ocena,data)
+VALUES(5,1,2,1,2.0,'2018-01-15');
+INSERT INTO OCENY(id_oceny,id_przedmiotu,id_ucznia,id_nauczyciela,ocena,data)
+VALUES(6,2,2,2,2.0,'2018-01-01');
+INSERT INTO OCENY(id_oceny,id_przedmiotu,id_ucznia,id_nauczyciela,ocena,data)
+VALUES(7,4,3,4,4.0,'2018-01-09');
+INSERT INTO OCENY(id_oceny,id_przedmiotu,id_ucznia,id_nauczyciela,ocena,data)
+VALUES(8,1,1,1,4.5,'2018-01-09');
+INSERT INTO OCENY(id_oceny,id_przedmiotu,id_ucznia,id_nauczyciela,ocena,data)
+VALUES(9,3,2,3,5.0,'2018-01-11');
+INSERT INTO OCENY(id_oceny,id_przedmiotu,id_ucznia,id_nauczyciela,ocena,data)
+VALUES(10,2,3,2,4.5,'2018-01-12');
+
+INSERT INTO NAUCZYCIELE
+VALUES(1,'Nowak','Kamil',1);
+INSERT INTO NAUCZYCIELE
+VALUES(2,'Kowalska','Barbara',2);
+INSERT INTO NAUCZYCIELE
+VALUES(3,'Wajda','Tadeusz',3);
+INSERT INTO NAUCZYCIELE
+VALUES(4,'Sobczyk','Marcin',4);
+
+INSERT INTO UCZNIOWIE
+VALUES(1,'Robak','Jacek','1998-12-03',1);
+INSERT INTO UCZNIOWIE
+VALUES(1,'Radosny','Radek','1997-09-03',2);
+INSERT INTO UCZNIOWIE
+VALUES(1,'Tylek','Arleta','1996-02-13',3);
+
+INSERT INTO KLASY
+VALUES(1,'pierwsza',1);
+INSERT INTO KLASY
+VALUES(2,'druga',2);
+INSERT INTO KLASY
+VALUES(3,'trzecia',3);
+
+
+Zad 1
+CREATE OR REPLACE FUNCTION fun1
+(sr OUT number)
+RETURN PRZEDMIOTY.nazwa%TYPE
+IS
+naz PRZEDMIOTY.nazwa%TYPE;
+BEGIN
+SELECT AVG(oc.ocena) as SREDNIA, przed.nazwa INTO sr, naz
+FROM OCENY oc
+INNER JOIN PRZEDMIOTY przed ON oc.id_przedmiotu = przed.id_przedmiotu
+GROUP BY przed.nazwa
+ORDER BY SREDNIA desc
+FETCH FIRST ROW ONLY;
+RETURN naz;
+END;
+
+SET SERVEROUTPUT ON
+DECLARE
+sredniaa number;
+nazwaa PRZEDMIOTY.nazwa%TYPE;
+BEGIN
+nazwaa := fun1(sredniaa);
+DBMS_OUTPUT.PUT_LINE('Srednia: ' || sredniaa || ' ' || 'Nazwa: ' || nazwaa);
+END;
+
+
+Zad3
+CREATE OR REPLACE PROCEDURE proc3(nazwa_tab VARCHAR2, kolumna VARCHAR2, suma OUT NUMBER, wartosc OUT NUMBER) IS
+BEGIN
+EXECUTE IMMEDIATE 'select SUM(:kolumna) from :nazwa_tab'
+INTO suma;
+EXECUTE IMMEDIATE ':wartosc := 3';
+END;
+
+CREATE TYPE Wynik AS OBJECT
+(
+suma NUMBER,
+wartosc NUMBER
+);
+CREATE TABLE tabelaWynik
+(
+    res Wynik
+);
+
+DECLARE
+sumaa VARCHAR2;
+wartoscc NUMBER;
+BEGIN 
+proc3('OCENA','ID_STUDENT',sumaa,wartoscc);
+INSERT INTO tabelaWynik
+VALUES(NEW wynik(sumaa,wartoscc));
+END;
+
+
+Zad4
+CREATE TYPE SAMOCHOD AS OBJECT
+(
+    marka VARCHAR2(30),
+    model VARCHAR2(30),
+    data_produkcji DATE,
+    cena NUMBER
+);
+
+CREATE TABLE SAMOCHODTABELA OF SAMOCHOD;
+
+INSERT INTO SAMOCHODTABELA
+VALUES(NEW SAMOCHOD('test1','test1','2000-01-01',54000));
+
+select VALUE(p) from SAMOCHODTABELA p; -- dostêp obiektowy
+select* from SAMOCHODTABELA; -- dostêp relacyjny
+
+
+Zad5
+CREATE TYPE SAMOCHOD AS OBJECT
+(
+    marka VARCHAR2(30),
+    model VARCHAR2(30),
+    data_produkcji DATE,
+    cena NUMBER,
+    MEMBER FUNCTION wiekSamochodu RETURN NUMBER,
+    MEMBER PROCEDURE obnizCene(rabat NUMBER)
+);
+
+CREATE TABLE WLASCICIELE
+(
+    imie VARCHAR(20),
+    nazwisko VARCHAR(20),
+    auto SAMOCHOD
+);
+
+CREATE OR REPLACE TYPE BODY SAMOCHOD AS
+    MEMBER FUNCTION wiekSamochodu RETURN NUMBER IS
+    BEGIN
+    RETURN EXTRACT (YEAR FROM CURRENT_DATE) - EXTRACT (YEAR FROM data_produkcji);
+    END wiekSamochodu;
+    
+    MEMBER PROCEDURE obnizCene(rabat NUMBER) IS
+    BEGIN
+        cena := cena - (rabat/100 * wiekSamochodu);
+    END obnizCene;
+END;
+
+DECLARE
+a_auto SAMOCHOD;
+BEGIN
+INSERT INTO WLASCICIELE
+VALUES('imie','nazwisko',NEW SAMOCHOD('marka','model','20100101',10000));
+
+SELECT auto INTO a_auto FROM WLASCICIELE WHERE imie = 'imie';
+a_auto.obnizCene(10);
+
+UPDATE WLASCICIELE
+SET auto = a_auto
+WHERE imie = 'imie';
+END;
+
+
+Zad6
+CREATE OR REPLACE PACKAGE user_connection AS
+PROCEDURE connecting(user_name IN VARCHAR2);
+END user_connection;
+
+CREATE OR REPLACE PACKAGE BODY user_connection AS
+    PROCEDURE connecting(user_name IN VARCHAR2) IS
+    BEGIN
+    DBMS_OUTPUT.PUT_LINE(user_name);
+    END connecting;
+END user_connection;
+
+DECLARE
+BEGIN
+user_connection.connecting('dawid');
+END;
+
