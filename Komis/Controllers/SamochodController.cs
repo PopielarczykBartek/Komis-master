@@ -1,7 +1,5 @@
-﻿using AspNetCore;
-using Komis.Models;
+﻿using Komis.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Komis.Controllers
 {
@@ -65,6 +63,27 @@ namespace Komis.Controllers
             }
             return View(samochod);
         }
+
+        public IActionResult Delete(int id)
+        {
+            var samochod = _samochodRepository.PobierzSamochodOId(id);
+            if (samochod==null)
+            {
+                return NotFound();
+            }
+            return View(samochod);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteConfirmed(int id)
+        {
+            var samochod = _samochodRepository.PobierzSamochodOId(id);
+            _samochodRepository.UsunSamochod(samochod);
+
+            return RedirectToAction("Index");
+        }
+
 
     }
 }
