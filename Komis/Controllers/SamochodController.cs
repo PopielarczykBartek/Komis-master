@@ -1,5 +1,10 @@
 ﻿using Komis.Models;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Komis.Controllers
 {
@@ -7,9 +12,11 @@ namespace Komis.Controllers
     {
 
         private readonly ISamochodRepository _samochodRepository;
-        public SamochodController(ISamochodRepository samochodRepository)
+        private IHostingEnvironment _env;
+        public SamochodController(ISamochodRepository samochodRepository, IHostingEnvironment env)
         {
             _samochodRepository = samochodRepository;
+            _env = env;
         }
 
         public IActionResult Index()
@@ -26,8 +33,11 @@ namespace Komis.Controllers
             return View(samochod);
         }
 
-        public IActionResult Create()
+        public IActionResult Create(string FileName)
         {
+            if (!string.IsNullOrEmpty(FileName))
+                ViewBag.ImgPath = "/Images/" + FileName;
+
             return View();
         }
 
@@ -43,11 +53,16 @@ namespace Komis.Controllers
             return View(samochod);
         }
 
-        public IActionResult Edit(int id)
+        public IActionResult Edit(int id, string FileName)
         {
             var samochod = _samochodRepository.PobierzSamochodOId(id);
                 if (samochod == null)
                 return NotFound();
+
+            if (!string.IsNullOrEmpty(FileName))
+                ViewBag.ImgPath = "/Images/" + FileName;
+            else
+                ViewBag.ImgPath = samochod.ZdjecieUrl;
 
             return View(samochod);
         }
@@ -82,6 +97,29 @@ namespace Komis.Controllers
             _samochodRepository.UsunSamochod(samochod);
 
             return RedirectToAction("Index");
+        }
+
+        [HttpPost("UploadFile")]
+        public async Task<IActionResult> UploadFile(IFormCollection form)
+        {
+            var webRoot = _env.WebRootPath;
+            var filePath = Path.Combine(webRoot.ToString() + "\\images\\" + form.Files[0].FileName);
+
+            if (form.Files[0].FileName.Length > 0)
+            {
+                using(var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await form.Files[0].CopyToAsync(stream);
+                }
+            }
+            if (Convert.ToString(form["Id"])== string.Empty || Convert.ToString(form["Id"]) == "0")
+            {
+                return RedirectToAction(nameof(Create),
+                    new { FileName = Convert.ToString(form.Files[0].FileName) }); // przekierowanie do Create
+            }
+            return RedirectToAction(nameof(Create),
+                new { FileName = Convert.ToString(form.Files[0].FileName), id=Convert.ToString(form["Id"])}); // przekierowanie do Edit
+
         }
 
 
