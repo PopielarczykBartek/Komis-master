@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+// import { error } from 'protractor';
 
 @Component({
   selector: 'app-value',
@@ -7,9 +9,20 @@ import { Component, OnInit } from '@angular/core';
 })
 export class ValueComponent implements OnInit {
 
-  constructor() { }
+  values: any;
 
-  ngOnInit() {
+  constructor(private http: HttpClient) { }
+
+  ngOnInit(): void {
+    this.getValues();
   }
+
+    getValues(): void{
+      this.http.get('http://localhost:5000/api/values').subscribe(response => {
+        this.values = response;
+      },
+       error => {console.log(error);
+       });
+    }
 
 }
